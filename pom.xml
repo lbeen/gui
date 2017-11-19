@@ -18,5 +18,21 @@
             <artifactId>jsoup</artifactId>
             <version>1.9.2</version>
         </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.16</version>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>ojdbc14</artifactId>
+            <version>10.2.0.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>poi</groupId>
+            <artifactId>poi-scratchpad</artifactId>
+            <version>3.1-FINAL</version>
+            <type>pom</type>
+        </dependency>
     </dependencies>
 </project>

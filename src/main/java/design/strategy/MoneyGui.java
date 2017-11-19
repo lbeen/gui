@@ -120,6 +120,8 @@ public class MoneyGui extends GblGui {
             itemSelect.setSelectedIndex(0);
             slText.setText("");
             totalText.setText("0");
+            detailModel.setRowCount(0);
+            this.total = 0;
         });
     }
 

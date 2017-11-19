@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="lbeen">
+    <CLASSES>
+      <root url="jar://F:/lbeen.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://F:/lbeen-source.jar!/" />
+    </SOURCES>
+  </library>
+</component>
