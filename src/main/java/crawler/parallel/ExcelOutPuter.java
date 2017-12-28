@@ -11,11 +11,19 @@ import java.io.IOException;
 import java.util.List;
 
 /**
+ * 数据输出到excel
+ *
  * @author 李斌
  */
-public class ExcelDataHandler implements DataHandler {
+public class ExcelOutPuter implements OutPuter {
+    /**
+     * excel目录
+     */
     private String excelDir;
 
+    /**
+     * 文件交表
+     */
     private int fileIndex = 1;
 
     @Override
@@ -24,7 +32,7 @@ public class ExcelDataHandler implements DataHandler {
     }
 
     @Override
-    public void handle(List<String[]> datas) {
+    public void out(List<String[]> datas) {
         HSSFWorkbook workbook = new HSSFWorkbook();
         HSSFSheet sheet = workbook.createSheet();
         for (int i = 0, size = datas.size(); i < size; i++) {
@@ -36,7 +44,7 @@ public class ExcelDataHandler implements DataHandler {
                 cell.setCellValue(new HSSFRichTextString(data[j]));
             }
         }
-        try (FileOutputStream out = new FileOutputStream(excelDir + getFileIndex() + ".xlsx")) {
+        try (FileOutputStream out = new FileOutputStream(excelDir + getFileIndex() + ".xls")) {
             workbook.write(out);
         } catch (IOException e) {
             throw new RuntimeException(e);

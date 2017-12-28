@@ -29,7 +29,7 @@ public abstract class Crawler extends Thread {
     /**
      * 临时文件目录
      */
-    private String dir;
+    private String tempDir;
     /**
      * 详细URL列表
      */
@@ -53,24 +53,35 @@ public abstract class Crawler extends Thread {
     /**
      * 数据处理器
      */
-    private DataHandler dataHandler;
-
+    private OutPuter outPuter;
+    /**
+     * 数据
+     */
     private List<String[]> datas = new ArrayList<>();
-
+    /**
+     * 一次处理最大数据数
+     */
     private int maxDatas;
-
-    @Override
-    public void run() {
-        try {
-            if (mainGet) {
-                mainGet();
-            } else {
-                mainPaser();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    /**
+     * 线程状态
+     */
+    private TaskState taskState = TaskState.READING;
+    /**
+     * 错误异常
+     */
+    private Exception error;
+    /**
+     * 访问数
+     */
+    private int gets = 0;
+    /**
+     * 解析数
+     */
+    private int parses = 0;
+    /**
+     * 输出数
+     */
+    private int outs = 0;
 
     /**
      * 是否主访问
@@ -82,8 +93,8 @@ public abstract class Crawler extends Thread {
     /**
      * 临时文件目录
      */
-    void setDir(String dir) {
-        this.dir = dir;
+    void setTempDir(String tempDir) {
+        this.tempDir = tempDir;
     }
 
     /**
@@ -103,13 +114,70 @@ public abstract class Crawler extends Thread {
     /**
      * 数据处理器
      */
-    void setDataHandler(DataHandler dataHandler) {
-        this.dataHandler = dataHandler;
+    void setOutPuter(OutPuter outPuter) {
+        this.outPuter = outPuter;
     }
 
-    public void setMaxDatas(int maxDatas) {
+    /**
+     * 一次处理最大数据数
+     */
+    void setMaxDatas(int maxDatas) {
         this.maxDatas = maxDatas;
         this.datas = new ArrayList<>(maxDatas);
+    }
+
+    /**
+     * 线程状态
+     */
+    public TaskState getTaskState() {
+        return taskState;
+    }
+
+    /**
+     * 错误异常
+     */
+    public Exception getError() {
+        return error;
+    }
+
+    /**
+     * 访问数
+     */
+    public int getGets() {
+        return gets;
+    }
+
+    /**
+     * 解析数
+     */
+    public int getParses() {
+        return parses;
+    }
+
+    /**
+     * 输出数
+     */
+    public int getOuts() {
+        return outs;
+    }
+
+    @Override
+    public void run() {
+        try {
+            if (mainGet) {
+                mainGet();
+            } else {
+                mainPaser();
+            }
+            if (!datas.isEmpty()) {
+                out();
+            }
+            taskState = TaskState.END;
+        } catch (IOException e) {
+            taskState = TaskState.ERROR;
+            error = e;
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -117,11 +185,10 @@ public abstract class Crawler extends Thread {
      */
     private void mainPaser() throws IOException {
         while (true) {
-            TaskState taskState = paser();
-            if (taskState == TaskState.PASERFINAL) {
-                taskState = get();
-                if (taskState == TaskState.GETFINAL) {
-                    _destroy();
+            HandleResult handleResult = paser();
+            if (handleResult == HandleResult.PASERFINAL) {
+                handleResult = get();
+                if (handleResult == HandleResult.GETFINAL) {
                     break;
                 }
             }
@@ -134,20 +201,18 @@ public abstract class Crawler extends Thread {
     private void mainGet() throws IOException {
         while (true) {
             if (getFinal) {
-                TaskState taskState = paser();
-                if (taskState == TaskState.PASERFINAL) {
-                    _destroy();
+                HandleResult handleResult = paser();
+                if (handleResult == HandleResult.PASERFINAL) {
                     break;
                 }
             } else {
-                TaskState taskState = get();
-                if (taskState == TaskState.CHANGE) {
+                HandleResult handleResult = get();
+                if (handleResult == HandleResult.CHANGE) {
                     paser();
-                } else if (taskState == TaskState.GETFINAL) {
+                } else if (handleResult == HandleResult.GETFINAL) {
                     getFinal = true;
-                    taskState = paser();
-                    if (taskState == TaskState.PASERFINAL) {
-                        _destroy();
+                    handleResult = paser();
+                    if (handleResult == HandleResult.PASERFINAL) {
                         break;
                     }
                 }
@@ -158,13 +223,14 @@ public abstract class Crawler extends Thread {
     /**
      * 访问方法存零时文件
      */
-    private TaskState get() throws IOException {
+    private HandleResult get() throws IOException {
+        taskState = TaskState.GETING;
         try {
             if (Lang.isEmpty(urls)) {
                 if (currentPage == -1) {
                     currentPage = pager.getPage();
                     if (currentPage == -1) {
-                        return TaskState.GETFINAL;
+                        return HandleResult.GETFINAL;
                     }
                 }
                 Document document = Jsoup.connect(getPageUrl(currentPage)).get();
@@ -173,18 +239,19 @@ public abstract class Crawler extends Thread {
             }
             for (int i = 0; i < urls.size(); item++) {
                 Document document = Jsoup.connect(urls.get(i)).get();
-                String filePath = dir + currentPage + "-" + item + ".html";
+                String filePath = tempDir + currentPage + "-" + item + ".html";
                 try (FileWriter writer = new FileWriter(filePath)) {
                     writer.write(document.toString());
                 }
                 urls.remove(i);
                 files.offer(filePath);
+                gets++;
             }
             currentPage = -1;
-            return TaskState.NORMAL;
+            return HandleResult.NORMAL;
         } catch (SocketTimeoutException e) {
-            e.printStackTrace(System.out);
-            return TaskState.CHANGE;
+//            e.printStackTrace(System.out);
+            return HandleResult.CHANGE;
         }
     }
 
@@ -192,29 +259,31 @@ public abstract class Crawler extends Thread {
     /**
      * 读取临时文件解析
      */
-    private TaskState paser() throws IOException {
+    private HandleResult paser() throws IOException {
+        taskState = TaskState.PARSEING;
         String filePath = files.poll();
         if (filePath == null) {
-            return TaskState.PASERFINAL;
+            return HandleResult.PASERFINAL;
         }
         File file = new File(filePath);
         Document document = Jsoup.parse(file, "utf-8");
-//        file.delete();
+        file.delete();
         String[] data = paserPage(document);
         if (data.length > 0) {
             datas.add(data);
+            parses++;
             if (datas.size() == maxDatas) {
-                dataHandler.handle(datas);
+                out();
                 datas.clear();
             }
         }
-        return TaskState.NORMAL;
+        return HandleResult.NORMAL;
     }
 
-    private void _destroy(){
-        if (datas.size() > 0){
-            dataHandler.handle(datas);
-        }
+    private void out() {
+        taskState = TaskState.OUTING;
+        outPuter.out(datas);
+        outs += datas.size();
     }
 
     /**

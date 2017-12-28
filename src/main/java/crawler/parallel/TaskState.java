@@ -1,25 +1,52 @@
 package crawler.parallel;
 
 /**
- * 爬虫操作结果状态
+ * 任务状态
  *
  * @author 李斌
  */
 public enum TaskState {
     /**
-     * 正常
+     * 准备
      */
-    NORMAL,
+    READING,
     /**
-     * 切换
+     * 访问
      */
-    CHANGE,
+    GETING,
     /**
-     * 读取结束
+     * 解析
      */
-    GETFINAL,
+    PARSEING,
     /**
-     * 解析结束
+     * 输出
      */
-    PASERFINAL
+    OUTING,
+    /**
+     * 错误
+     */
+    ERROR,
+    /**
+     * 结束
+     */
+    END;
+
+    public static String getName(TaskState taskState) {
+        switch (taskState) {
+            case READING:
+                return "准备";
+            case GETING:
+                return "访问";
+            case PARSEING:
+                return "解析";
+            case OUTING:
+                return "输出";
+            case ERROR:
+                return "错误";
+            case END:
+                return "结束";
+            default:
+                return "";
+        }
+    }
 }
