@@ -129,7 +129,7 @@ public abstract class Crawler extends Thread {
     /**
      * 线程状态
      */
-    public TaskState getTaskState() {
+    TaskState getTaskState() {
         return taskState;
     }
 
@@ -143,21 +143,21 @@ public abstract class Crawler extends Thread {
     /**
      * 访问数
      */
-    public int getGets() {
+    int getGets() {
         return gets;
     }
 
     /**
      * 解析数
      */
-    public int getParses() {
+    int getParses() {
         return parses;
     }
 
     /**
      * 输出数
      */
-    public int getOuts() {
+    int getOuts() {
         return outs;
     }
 
@@ -168,6 +168,12 @@ public abstract class Crawler extends Thread {
                 mainGet();
             } else {
                 mainPaser();
+            }
+            while (true) {
+                HandleResult handleResult = paser();
+                if (handleResult == HandleResult.PASERFINAL) {
+                    break;
+                }
             }
             if (!datas.isEmpty()) {
                 out();
@@ -184,7 +190,7 @@ public abstract class Crawler extends Thread {
      * 主解析方法，解析失败读取
      */
     private void mainPaser() throws IOException {
-        while (true) {
+        while (!isInterrupted()) {
             HandleResult handleResult = paser();
             if (handleResult == HandleResult.PASERFINAL) {
                 handleResult = get();
@@ -199,7 +205,7 @@ public abstract class Crawler extends Thread {
      * 主获取方法，读取失败解析
      */
     private void mainGet() throws IOException {
-        while (true) {
+        while (!isInterrupted()) {
             if (getFinal) {
                 HandleResult handleResult = paser();
                 if (handleResult == HandleResult.PASERFINAL) {

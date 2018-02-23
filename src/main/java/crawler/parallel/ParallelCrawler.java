@@ -131,4 +131,19 @@ public class ParallelCrawler {
             crawler.start();
         }
     }
+
+    public void stop() {
+        for (Crawler crawler : crawlers) {
+            crawler.interrupt();
+        }
+    }
+
+    public boolean isStoped() {
+        for (Crawler crawler : crawlers) {
+            if (crawler.getTaskState() != TaskState.END) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

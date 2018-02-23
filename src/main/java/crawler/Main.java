@@ -1,7 +1,6 @@
 package crawler;
 
 import crawler.gui.CrawlerGui;
-import crawler.parallel.ParallelCrawler;
 
 /**
  * 爬虫main
@@ -11,8 +10,6 @@ import crawler.parallel.ParallelCrawler;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-//        ParallelCrawler parallelCrawler = new ParallelCrawler();
-//        parallelCrawler.run();
         CrawlerGui gui = new CrawlerGui();
         gui.run();
     }

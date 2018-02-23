@@ -15,6 +15,7 @@ import javax.swing.JTextField;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.io.File;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -26,6 +27,7 @@ import java.util.TimerTask;
 public class CrawlerGui extends GblGui {
     private JComboBox<Web> webSelect;
     private JButton startButton;
+    private JButton stopButton;
     private JTextField tempDir;
     private JButton tempDirButton;
     private JTextField outDir;
@@ -35,6 +37,7 @@ public class CrawlerGui extends GblGui {
     private JTextField startPage;
     private JTextField endPage;
     private CrawlerRunTimeModel detailModel;
+    private ParallelCrawler parallelCrawler;
 
     @Override
     protected void initGui() {
@@ -50,6 +53,9 @@ public class CrawlerGui extends GblGui {
         add(webSelect);
         startButton = new JButton("开始");
         add(startButton);
+        stopButton = new JButton("停止");
+        stopButton.setVisible(false);
+        add(stopButton);
 
         gridyAdd(1);
         gbc.gridwidth = 1;
@@ -111,12 +117,25 @@ public class CrawlerGui extends GblGui {
 
         startButton.addActionListener(e -> {
             try {
+                startButton.setVisible(false);
+                stopButton.setVisible(true);
                 start();
             } catch (Exception exception){
                 exception.printStackTrace(System.out);
                 JOptionPane.showMessageDialog(getFrame(), exception.getMessage(), "提示消息", JOptionPane.WARNING_MESSAGE);
             }
         });
+
+        stopButton.addActionListener(e -> {
+            parallelCrawler.stop();
+            while (true){
+                if (parallelCrawler.isStoped()){
+                    startButton.setVisible(true);
+                    stopButton.setVisible(false);
+                    break;
+                }
+            }
+    });
     }
 
     private void selectFile(JTextField taget) {
@@ -130,7 +149,7 @@ public class CrawlerGui extends GblGui {
     }
 
     private void start() throws Exception{
-        ParallelCrawler parallelCrawler = new ParallelCrawler();
+        parallelCrawler = new ParallelCrawler();
         parallelCrawler.setTempDir(tempDir.getText() + "\\");
         parallelCrawler.setOutDir(outDir.getText() + "\\");
         parallelCrawler.setMainGetThreadCount(Integer.parseInt(mainGetThreadCount.getText()));
@@ -144,10 +163,14 @@ public class CrawlerGui extends GblGui {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                System.out.println("刷新table1");
                 detailModel.setCrawlers(parallelCrawler.getCrawlers());
+                if (parallelCrawler.isStoped()){
+                    timer.cancel();
+                    startButton.setVisible(true);
+                    stopButton.setVisible(false);
+                }
             }
-        }, System.currentTimeMillis(), 1000);
+        }, new Date(), 1000);
         parallelCrawler.start();
     }
 
