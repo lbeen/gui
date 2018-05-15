@@ -256,7 +256,7 @@ public abstract class Crawler extends Thread {
             currentPage = -1;
             return HandleResult.NORMAL;
         } catch (SocketTimeoutException e) {
-//            e.printStackTrace(System.out);
+            e.printStackTrace(System.out);
             return HandleResult.CHANGE;
         }
     }
