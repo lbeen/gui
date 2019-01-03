@@ -18,6 +18,7 @@ import java.io.File;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 页面
@@ -129,6 +130,12 @@ public class CrawlerGui extends GblGui {
         stopButton.addActionListener(e -> {
             parallelCrawler.stop();
             while (true){
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                    Thread.sleep(100);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
                 if (parallelCrawler.isStoped()){
                     startButton.setVisible(true);
                     stopButton.setVisible(false);

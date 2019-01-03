@@ -9,8 +9,9 @@ import crawler.gui.CrawlerGui;
  */
 public class Main {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args){
         CrawlerGui gui = new CrawlerGui();
         gui.run();
+
     }
 }
